@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re, random, locale
 from base64 import b64encode, b64decode
 
+import bleach
+
 # a few patterns we use later
 
 MW_COLON_STATE_TEXT = 0
@@ -40,16 +42,13 @@ _openMatchPat = re.compile(u"(<table|<blockquote|<h1|<h2|<h3|<h4|<h5|<h6|<pre|<t
 _tagPattern = re.compile(ur'^(/?)(\w+)([^>]*?)(/?>)([^<]*)$', re.UNICODE)    
 
 _htmlpairs = ( # Tags that must be closed
-    u'b', u'del', u'i', u'ins', u'u', u'font', u'big', u'small', u'sub', u'sup', u'h1',
-    u'h2', u'h3', u'h4', u'h5', u'h6', u'cite', u'code', u'em', u's',
-    u'strike', u'strong', u'tt', u'var', u'div', u'center',
+    u'b', u'del', u'i', u'ins', u'u', u'font', u'big', u'small', u'sub',
+    u'sup', u'h1', u'h2', u'h3', u'h4', u'h5', u'h6', u'cite', u'code',
+    u'em', u's', u'strike', u'strong', u'tt', u'var', u'div', u'center',
     u'blockquote', u'ol', u'ul', u'dl', u'table', u'caption', u'pre',
-    u'ruby', u'rt' , u'rb' , u'rp', u'p', u'span', u'u',
+    u'ruby', u'rt' , u'rb' , u'rp', u'p', u'span', u'u', u'li', u'dd', u'dt',
 )
-_htmlsingle = (
-    u'br', u'hr', u'li', u'dt', u'dd', u'img',
-)
-_htmlsingleonly = ( # Elements that cannot have close tags
+_htmlsingle = (  # Elements that cannot have close tags
     u'br', u'hr', u'img',
 )
 _htmlnest = ( # Tags that can be nested--??
@@ -426,6 +425,23 @@ _whitelist = setupAttributeWhitelist()
 _page_cache = {}
 env = {}
 
+# Used for bleach, list of allowed tags
+ALLOWED_TAGS = list(_htmlelements + ('a',))
+
+ALLOWED_ATTRIBUTES = {
+    'a': ['href', 'title'],
+    'div': ['id'],
+    'h1': ['id'],
+    'h2': ['id'],
+    'h3': ['id'],
+    'h4': ['id'],
+    'h5': ['id'],
+    'h6': ['id'],
+    'li': ['class'],
+    'span': ['class'],
+}
+
+
 def registerTagHook(tag, function):
     mTagHooks[tag] = function
 
@@ -596,7 +612,7 @@ class BaseParser(object):
                 # Check our stack
                 if slash:
                     # Closing a tag...
-                    if t in _htmlsingleonly or len(tagstack) == 0:
+                    if t in _htmlsingle or len(tagstack) == 0:
                         badtag = True
                     else:
                         ot = tagstack.pop()
@@ -637,12 +653,9 @@ class BaseParser(object):
                     # Is it a self-closed htmlpair? (bug 5487)
                     elif brace == u'/>' and t in _htmlpairs:
                         badTag = True
-                    elif t in _htmlsingleonly:
+                    elif t in _htmlsingle:
                         # Hack to force empty tag for uncloseable elements
                         brace = u'/>'
-                    elif t in _htmlsingle:
-                        # Hack to not close $htmlsingle tags
-                        brace = None
                     else:
                         if t == u'table':
                             tablestack.append(tagstack)
@@ -1652,6 +1665,7 @@ class Parser(BaseParser):
         super(Parser, self).__init__()
         self.show_toc = show_toc
         self.base_url = base_url
+        self.bleach = bleach.Bleach()
 
     def parse(self, text):
         utf8 = isinstance(text, str)
@@ -1685,8 +1699,10 @@ class Parser(BaseParser):
         if taggedNewline and text[-1:] == u'\n':
             text = text[:-1]
         if utf8:
-            return text.encode("utf-8")
-        return text
+            text.encode("utf-8")
+        # Pass output through bleach
+        return self.bleach.clean(text, tags=ALLOWED_TAGS,
+                                 attributes=ALLOWED_ATTRIBUTES)
 
     def checkTOC(self, text):
         if text.find(u"__NOTOC__") != -1:
@@ -2115,7 +2131,7 @@ class Parser(BaseParser):
                     toclevel += 1
                     sublevelCount[toclevel] = 0
                     if toclevel < wgMaxTocLevel:
-                        toc.append(u'\n<ul>')
+                        toc.append(u'<ul>')
                 elif level < prevlevel and toclevel > 1:
                     # Decrease TOC level, find level to jump to
                 
@@ -2131,11 +2147,10 @@ class Parser(BaseParser):
                                 toclevel = i + 1
                                 break
                     if toclevel < wgMaxTocLevel:
-                        toc.append(u"</li>\n")
-                        toc.append(u"</ul>\n</li>\n" * max(prevtoclevel - toclevel, 0))
+                        toc.append(u"</li>")
+                        toc.append(u"</ul></li>" * max(prevtoclevel - toclevel, 0))
                 else:
-                    if toclevel < wgMaxTocLevel:
-                        toc.append(u"</li>\n")
+                    toc.append(u"</li>")
             
                 levelCount[toclevel] = level
             
@@ -2190,7 +2205,7 @@ class Parser(BaseParser):
                 anchor += u'_' + unicode(refcount[headlineCount])
         
             if enoughToc:
-                toc.append(u'\n<li class="toclevel-')
+                toc.append(u'<li class="toclevel-')
                 toc.append(to_unicode(toclevel))
                 toc.append(u'"><a href="#w_')
                 toc.append(anchor)
@@ -2231,10 +2246,10 @@ class Parser(BaseParser):
         
         if enoughToc:
             if toclevel < wgMaxTocLevel:
-                toc.append(u"</li>\n")
-                toc.append(u"</ul>\n</li>\n" * max(0, toclevel - 1))
+                toc.append(u"</li>")
+                toc.append(u"</ul></li>" * max(0, toclevel - 1))
             toc.insert(0, u'<div id="toc"><h2>Table of Contents</h2>')
-            toc.append(u'</ul>\n</div>')
+            toc.append(u'</ul></div>')
 
         # split up and insert constructed headlines
     

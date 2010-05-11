@@ -14,7 +14,7 @@ class WikimarkupTestCase(unittest.TestCase):
         self.assertEquals(parse(text), '<h2 id="w_heading2">heading2</h2>')
 
         text = """=heading1=\n==heading2==\n===heading3===\n====heading4====\n=====heading5=====\n======heading6======"""
-        assumed = """<div id="toc"><h2>Table of Contents</h2>\n<ul>\n<li class="toclevel-1"><a href="#w_heading1"><span class="tocnumber">1</span> <span class="toctext">heading1</span></a>\n<ul>\n<li class="toclevel-2"><a href="#w_heading2"><span class="tocnumber">1.1</span> <span class="toctext">heading2</span></a>\n<ul>\n<li class="toclevel-3"><a href="#w_heading3"><span class="tocnumber">1.1.1</span> <span class="toctext">heading3</span></a>\n<ul>\n<li class="toclevel-4"><a href="#w_heading4"><span class="tocnumber">1.1.1.1</span> <span class="toctext">heading4</span></a>\n<li class="toclevel-5"><a href="#w_heading5"><span class="tocnumber">1.1.1.1.1</span> <span class="toctext">heading5</span></a>\n<li class="toclevel-6"><a href="#w_heading6"><span class="tocnumber">1.1.1.1.1.1</span> <span class="toctext">heading6</span></a></ul>\n</div><h1 id="w_heading1">heading1</h1>\n<h2 id="w_heading2">heading2</h2>\n<h3 id="w_heading3">heading3</h3>\n<h4 id="w_heading4">heading4</h4>\n<h5 id="w_heading5">heading5</h5>\n<h6 id="w_heading6">heading6</h6>"""
+        assumed = """<div id="toc"><h2>Table of Contents</h2><ul><li class="toclevel-1"><a href="#w_heading1"><span class="tocnumber">1</span> <span class="toctext">heading1</span></a><ul><li class="toclevel-2"><a href="#w_heading2"><span class="tocnumber">1.1</span> <span class="toctext">heading2</span></a><ul><li class="toclevel-3"><a href="#w_heading3"><span class="tocnumber">1.1.1</span> <span class="toctext">heading3</span></a><ul><li class="toclevel-4"><a href="#w_heading4"><span class="tocnumber">1.1.1.1</span> <span class="toctext">heading4</span></a></li><li class="toclevel-5"><a href="#w_heading5"><span class="tocnumber">1.1.1.1.1</span> <span class="toctext">heading5</span></a></li><li class="toclevel-6"><a href="#w_heading6"><span class="tocnumber">1.1.1.1.1.1</span> <span class="toctext">heading6</span></a></li></ul></li></ul></li></ul></li></ul></div><h1 id="w_heading1">heading1</h1>\n<h2 id="w_heading2">heading2</h2>\n<h3 id="w_heading3">heading3</h3>\n<h4 id="w_heading4">heading4</h4>\n<h5 id="w_heading5">heading5</h5>\n<h6 id="w_heading6">heading6</h6>"""
         self.assertEquals(parse(text), assumed)
 
     def testLinks(self):
@@ -60,7 +60,7 @@ class WikimarkupTestCase(unittest.TestCase):
         self.assertEquals(parse(text), '<p>hello\nhow are you\n</p><p>goodbye\n</p>')
 
         text = "hello<br />how are you\n\ngoodbye"
-        self.assertEquals(parse(text), '<p>hello<br />how are you\n</p><p>goodbye\n</p>')
+        self.assertEquals(parse(text), '<p>hello<br/>how are you\n</p><p>goodbye\n</p>')
 
     def testSafeHTML(self):
         """
@@ -90,7 +90,7 @@ class WikimarkupTestCase(unittest.TestCase):
         Test many formatting methods together
         """
         text = """=My Heading=\n* here\n* is\n* a\n* [http://mydomain.com list]\n==Subheading==\n==show me a toc==\n===pretty please==="""
-        assumed = '<div id="toc"><h2>Table of Contents</h2>\n<ul>\n<li class="toclevel-1"><a href="#w_my-heading"><span class="tocnumber">1</span> <span class="toctext">My Heading</span></a>\n<ul>\n<li class="toclevel-2"><a href="#w_subheading"><span class="tocnumber">1.1</span> <span class="toctext">Subheading</span></a></li>\n<li class="toclevel-2"><a href="#w_show-me-a-toc"><span class="tocnumber">1.2</span> <span class="toctext">show me a toc</span></a>\n<ul>\n<li class="toclevel-3"><a href="#w_pretty-please"><span class="tocnumber">1.2.1</span> <span class="toctext">pretty please</span></a></li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n</div><h1 id="w_my-heading">My Heading</h1>\n<ul><li> here\n</li><li> is\n</li><li> a\n</li><li> <a href="http://mydomain.com">list</a>\n</li></ul>\n<h2 id="w_subheading">Subheading</h2>\n<h2 id="w_show-me-a-toc">show me a toc</h2>\n<h3 id="w_pretty-please">pretty please</h3>'
+        assumed = '<div id="toc"><h2>Table of Contents</h2><ul><li class="toclevel-1"><a href="#w_my-heading"><span class="tocnumber">1</span> <span class="toctext">My Heading</span></a><ul><li class="toclevel-2"><a href="#w_subheading"><span class="tocnumber">1.1</span> <span class="toctext">Subheading</span></a></li><li class="toclevel-2"><a href="#w_show-me-a-toc"><span class="tocnumber">1.2</span> <span class="toctext">show me a toc</span></a><ul><li class="toclevel-3"><a href="#w_pretty-please"><span class="tocnumber">1.2.1</span> <span class="toctext">pretty please</span></a></li></ul></li></ul></li></ul></div><h1 id="w_my-heading">My Heading</h1>\n<ul><li> here\n</li><li> is\n</li><li> a\n</li><li> <a href="http://mydomain.com">list</a>\n</li></ul>\n<h2 id="w_subheading">Subheading</h2>\n<h2 id="w_show-me-a-toc">show me a toc</h2>\n<h3 id="w_pretty-please">pretty please</h3>'
         self.assertEquals(parse(text), assumed)
         
 if __name__ == '__main__':
