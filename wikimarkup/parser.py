@@ -46,7 +46,7 @@ _htmlpairs = ( # Tags that must be closed
     u'sup', u'h1', u'h2', u'h3', u'h4', u'h5', u'h6', u'cite', u'code',
     u'em', u's', u'strike', u'strong', u'tt', u'var', u'div', u'center',
     u'blockquote', u'ol', u'ul', u'dl', u'table', u'caption', u'pre',
-    u'ruby', u'rt' , u'rb' , u'rp', u'p', u'span', u'u', u'li', u'dd', u'dt',
+    u'p', u'span', u'u', u'li', u'dd', u'dt',
 )
 _htmlsingle = (  # Elements that cannot have close tags
     u'br', u'hr', u'img',
@@ -416,10 +416,6 @@ def setupAttributeWhitelist():
         u'u':            common,
         u'font':        common + ( u'size', u'color', u'face' ),
         u'hr':            common + ( u'noshade', u'size', u'width' ),
-        u'ruby':        common,
-        u'rb':            common,
-        u'rt':            common, #array_merge( $common, array( 'rbspan' ) ),
-        u'rp':            common,
     }
 _whitelist = setupAttributeWhitelist()
 _page_cache = {}
@@ -1700,7 +1696,8 @@ class Parser(BaseParser):
             text = text[:-1]
         if utf8:
             text.encode("utf-8")
-        # Pass output through bleach
+        # Pass output through bleach and linkify
+        text = self.bleach.linkify(text)
         return self.bleach.clean(text, tags=ALLOWED_TAGS,
                                  attributes=ALLOWED_ATTRIBUTES)
 
