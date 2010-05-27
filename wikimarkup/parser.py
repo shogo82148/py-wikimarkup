@@ -592,7 +592,6 @@ class BaseParser(object):
     def removeHtmlTags(self, text):
         """convert bad tags into HTML identities"""
         sb = []
-        text = self.removeHtmlComments(text)
         bits = text.split(u'<')
         sb.append(bits.pop(0))
         tagstack = []
