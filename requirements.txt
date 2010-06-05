@@ -1,2 +1,2 @@
 # py-wikimarkup requires bleach
-bleach
+-e git://github.com/jsocol/bleach.git#egg=bleach
