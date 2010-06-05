@@ -2,11 +2,9 @@
 
 from setuptools import setup, find_packages
 
-import wikimarkup
-
 setup(
     name='py-wikimarkup',
-    version=".".join(map(str, wikimarkup.__version__)),
+    version='1.0.2',
     packages=find_packages(),
     description='A basic MediaWiki markup parser.',
     long_description=open('README.rst').read(),
