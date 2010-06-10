@@ -599,6 +599,8 @@ class BaseParser(object):
         for x in bits:
             m = _tagPattern.match(x)
             if not m:
+                #  If it isn't a tag, leave it in place and move on
+                sb.append(u'<%s' % x)
                 continue
             slash, t, params, brace, rest = m.groups()
             t = t.lower()

@@ -100,7 +100,55 @@ class WikimarkupTestCase(unittest.TestCase):
         Comments are removed.
         """
         text = '<!-- This is a comment. -->'
-        assumed = ''
+        assumed = '<p>\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+    def testLessThanBracket(self):
+        """
+        Make sure strings like "<- test" aren't removed
+        """
+        text = '<- test'
+        assumed = '<p>&lt;- test\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+        text = '<- <span>some text</span>'
+        assumed = '<p>&lt;- <span>some text</span>\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+        text = '<- <span>some text</span> ->'
+        assumed = '<p>&lt;- <span>some text</span> -&gt;\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+        text = '<- <->'
+        assumed = '<p>&lt;- &lt;-&gt;\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+        text = '< <script type="text/javascript">alert("evil")</script>'
+        assumed = '<p>&lt; &lt;script type="text/javascript"&gt;alert("evil")&lt;/script&gt;\n</p>'
+        self.assertEquals(parse(text), assumed)
+        
+        text = '<> <a href="javascript:alert(\'boo!\')">click here</a>'
+        assumed = '<p>&lt;&gt; &lt;a href="javascript:alert(\'boo!\')"&gt;click here&lt;/a&gt;\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+        text = '<- <IMG SRC=javascript:alert(\'XSS\')>'
+        assumed = '<p>&lt;- <img>\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+        text= '<<< <img src="#" onerror=alert(1) />'
+        assumed = '<p>&lt;&lt;&lt; <img>\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+        text= '<<div id="woot">010</div>'
+        assumed = '&lt;<div id="woot">010</div>'
+        self.assertEquals(parse(text), assumed)
+
+        text= '<-script --><!-- foo-->>alert("hi")</script>'
+        assumed = '<p>&lt;-script --&gt;&gt;alert("hi")&lt;/script&gt;\n</p>'
+        self.assertEquals(parse(text), assumed)
+
+        text='<script <->alert("foo");</script>'
+        assumed = '<p>&lt;script &lt;-=""&gt;alert("foo");&lt;/script&gt;\n</p>&lt;/script&gt;<p></p>'
         self.assertEquals(parse(text), assumed)
 
 
