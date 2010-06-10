@@ -1656,11 +1656,15 @@ class BaseParser(object):
         return ''.join(output)
         
 class Parser(BaseParser):
-    def __init__(self, show_toc=True, base_url=None):
+
+    def __init__(self, show_toc=True, base_url=None,
+                 tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES):
         super(Parser, self).__init__()
         self.show_toc = show_toc
         self.base_url = base_url
         self.bleach = bleach.Bleach()
+        self.tags = tags
+        self.attributes = attributes
 
     def parse(self, text):
         utf8 = isinstance(text, str)
@@ -1681,13 +1685,13 @@ class Parser(BaseParser):
         text = self.parseHeaders(text)
         text = self.parseAllQuotes(text)
         text = self.replaceExternalLinks(text)
-        text = self.replaceInternalLinks(text)
         if not self.show_toc and text.find(u"<!--MWTOC-->") == -1:
             self.show_toc = False
         text = self.formatHeadings(text, True)
         text = self.unstrip(text)
         text = self.fixtags(text)
         text = self.doBlockLevels(text, True)
+        text = self.replaceInternalLinks(text)
         text = self.unstripNoWiki(text)
         text = text.split(u'\n')
         text = u'\n'.join(text)
@@ -1697,8 +1701,8 @@ class Parser(BaseParser):
             text.encode("utf-8")
         # Pass output through bleach and linkify
         text = self.bleach.linkify(text)
-        return self.bleach.clean(text, tags=ALLOWED_TAGS,
-                                 attributes=ALLOWED_ATTRIBUTES)
+        return self.bleach.clean(text, tags=self.tags,
+                                 attributes=self.attributes)
 
     def checkTOC(self, text):
         if text.find(u"__NOTOC__") != -1:
@@ -2271,9 +2275,10 @@ class Parser(BaseParser):
         else:
             return full
 
-def parse(text, showToc=True):
+def parse(text, showToc=True, tags=ALLOWED_TAGS,
+          attributes=ALLOWED_ATTRIBUTES):
     """Returns HTML from MediaWiki markup"""
-    p = Parser(show_toc=showToc)
+    p = Parser(show_toc=showToc, tags=tags, attributes=attributes)
     return p.parse(text)
 
 def parselite(text):
