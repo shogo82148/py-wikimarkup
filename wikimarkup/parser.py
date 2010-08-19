@@ -419,7 +419,7 @@ def setupAttributeWhitelist():
     }
 _whitelist = setupAttributeWhitelist()
 _page_cache = {}
-env = {}
+#env = {}
 
 # Used for bleach, list of allowed tags
 ALLOWED_TAGS = list(_htmlelements + ('a',))
@@ -438,63 +438,67 @@ ALLOWED_ATTRIBUTES = {
 }
 
 
-def registerTagHook(tag, function):
-    mTagHooks[tag] = function
-
-def registerInternalLinkHook(tag, function):
-    """
-    Register a hook called for [[internal links]].  There is no default
-    handling for internal links.
-
-    def internalLinkHook(parser_env, namespace, body):
-	...
-	return replacement
-
-    registerInternalLinkHook(None, internalLinkHook)  # called for [[link]]
-    registerInternalLinkHook('Wikipedia', internalLinkHook)  # called for [[Wikipedia:link]]
-    registerInternalLinkHook(':en', internalLinkHook)  # called for [[:en:link]]
-    registerInternalLinkHook(':', internalLinkHook)  # called for [[:any:link]] not hooked above
-    registerInternalLinkHook('*', internalLinkHook)  # called for [[anything]] not hooked above
-    """
-    mInternalLinkHooks[tag] = function
-
 class BaseParser(object):
     def __init__(self):
         self.uniq_prefix = u"\x07UNIQ" + unicode(random.randint(1, 1000000000))
         self.strip_state = {}
         self.arg_stack = []
-        self.env = env
-        self.keep_env = (env != {})
+    #    self.env = env
+    #    self.keep_env = (env != {})
+        # tag hooks
+        self.tagHooks = {}
+        # [[internal link]] hooks
+        self.internalLinkHooks = {}
         
-    def __del__(self):
-        if not self.keep_env:
-            global env
-            env = {}
+    #def __del__(self):
+    #    if not self.keep_env:
+    #        global env
+    #        env = {}
 
-    def store_object(self, namespace, key, value=True):
+    def registerTagHook(self, tag, function):
+        self.tagHooks[tag] = function
+
+    def registerInternalLinkHook(self, tag, function):
         """
-        Used to store objects in the environment 
-        which assists in preventing recursive imports.
+        Register a hook called for [[internal links]].  There is no default
+        handling for internal links.
+
+        def internalLinkHook(parser_env, namespace, body):
+        ...
+        return replacement
+
+        parser.registerInternalLinkHook(None, internalLinkHook)  # called for [[link]]
+        parser.registerInternalLinkHook('Wikipedia', internalLinkHook)  # called for [[Wikipedia:link]]
+        parser.registerInternalLinkHook(':en', internalLinkHook)  # called for [[:en:link]]
+        parser.registerInternalLinkHook(':', internalLinkHook)  # called for [[:any:link]] not hooked above
+        parser.registerInternalLinkHook('*', internalLinkHook)  # called for [[anything]] not hooked above
         """
-        # Store the item to not reprocess it    
-        if namespace not in self.env:
-            self.env[namespace] = {}
-        self.env[namespace][key] = value
+        self.internalLinkHooks[tag] = function
 
-    def has_object(self, namespace, key):
-        if namespace not in self.env:
-            self.env[namespace] = {}
-        if hasattr(self, 'count'):
-            data = self.env[namespace]
-            test = key in data
-            ls
-            self.count = True
-        return key in self.env[namespace]
+    #def store_object(self, namespace, key, value=True):
+    #    """
+    #    Used to store objects in the environment 
+    #    which assists in preventing recursive imports.
+    #    """
+    #    # Store the item to not reprocess it    
+    #    if namespace not in self.env:
+    #        self.env[namespace] = {}
+    #    self.env[namespace][key] = value
 
-    def retrieve_object(self, namespace, key, default=None):
-        if not self.env.get(namespace):
-            self.env[namespace] = {}
-        return self.env[namespace].get(key, default)
+    #def has_object(self, namespace, key):
+    #    if namespace not in self.env:
+    #        self.env[namespace] = {}
+    #    if hasattr(self, 'count'):
+    #        data = self.env[namespace]
+    #        test = key in data
+    #        ls
+    #        self.count = True
+    #    return key in self.env[namespace]
+
+    #def retrieve_object(self, namespace, key, default=None):
+    #    if not self.env.get(namespace):
+    #        self.env[namespace] = {}
+    #    return self.env[namespace].get(key, default)
 
     def parse(self, text):
         utf8 = isinstance(text, str)
@@ -528,7 +532,7 @@ class BaseParser(object):
 
         commentState = {}
 
-        elements = ['nowiki',]  + mTagHooks.keys()
+        elements = ['nowiki',]  + self.tagHooks.keys()
         if True: #wgRawHtml
             elements.append('html')
 
@@ -554,8 +558,8 @@ class BaseParser(object):
                 elif tagName == u'nowiki':
                     output = content.replace(u'&', u'&amp;').replace(u'<', u'&lt;').replace(u'>', u'&gt;')
                 else:
-                    if tagName in mTagHooks:
-                        output = mTagHooks[tagName](self, content, params)
+                    if tagName in self.tagHooks:
+                        output = self.tagHooks[tagName](self, content, params)
                     else:
                         output = content.replace(u'&', u'&amp;').replace(u'<', u'&lt;').replace(u'>', u'&gt;')
             else:
@@ -1111,12 +1115,14 @@ class BaseParser(object):
                 i += 1
             else:
                 space, name = bits[i:i+2]
-                if space in mInternalLinkHooks:
-                    sb.append(mInternalLinkHooks[space](self, space, name))
-                elif space and space.startswith(':') and ':' in mInternalLinkHooks:
-                    sb.append(mInternalLinkHooks[':'](self, space, name))
-                elif '*' in mInternalLinkHooks:
-                    sb.append(mInternalLinkHooks['*'](self, space, name))
+                if space in self.internalLinkHooks:
+                    sb.append(self.internalLinkHooks[space](
+                        self, space, name))
+                elif space and space.startswith(':') and \
+                     ':' in self.internalLinkHooks:
+                    sb.append(self.internalLinkHooks[':'](self, space, name))
+                elif '*' in self.internalLinkHooks:
+                    sb.append(self.internalLinkHooks['*'](self, space, name))
                 elif bits[i]:
                     sb.append(u'[[%s:%s]]' % (bits[i], bits[i+1]))
                 else:
@@ -1659,16 +1665,17 @@ class BaseParser(object):
         
 class Parser(BaseParser):
 
-    def __init__(self, show_toc=True, base_url=None,
-                 tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES):
+    def __init__(self, base_url=None):
         super(Parser, self).__init__()
-        self.show_toc = show_toc
         self.base_url = base_url
         self.bleach = bleach.Bleach()
+
+    def parse(self, text, show_toc=True, tags=ALLOWED_TAGS,
+              attributes=ALLOWED_ATTRIBUTES):
+        """Returns HTML from MediaWiki markup"""
+        self.show_toc = show_toc
         self.tags = tags
         self.attributes = attributes
-
-    def parse(self, text):
         utf8 = isinstance(text, str)
         text = to_unicode(text)
         if text[-1:] != u'\n':
@@ -2277,11 +2284,11 @@ class Parser(BaseParser):
         else:
             return full
 
-def parse(text, showToc=True, tags=ALLOWED_TAGS,
+def parse(text, show_toc=True, tags=ALLOWED_TAGS,
           attributes=ALLOWED_ATTRIBUTES):
     """Returns HTML from MediaWiki markup"""
-    p = Parser(show_toc=showToc, tags=tags, attributes=attributes)
-    return p.parse(text)
+    p = Parser()
+    return p.parse(text, show_toc=show_toc, tags=tags, attributes=attributes)
 
 def parselite(text):
     """Returns HTML from MediaWiki markup ignoring
@@ -2344,10 +2351,6 @@ def to_unicode(text, charset=None):
         except UnicodeError:
             return unicode(text, locale.getpreferredencoding(), 'replace')
 
-# tag hooks
-mTagHooks = {}
-# [[internal link]] hooks
-mInternalLinkHooks = {}
 
 def safe_name(name=None, remove_slashes=True):
     if name is None:

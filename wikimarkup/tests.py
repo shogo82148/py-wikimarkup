@@ -1,6 +1,7 @@
 import unittest
 
-from parser import parse
+from parser import parse, Parser
+
 
 class WikimarkupTestCase(unittest.TestCase):
     def testHeadings(self):
@@ -150,6 +151,26 @@ class WikimarkupTestCase(unittest.TestCase):
         text='<script <->alert("foo");</script>'
         assumed = '<p>&lt;script &lt;-=""&gt;alert("foo");&lt;/script&gt;\n</p>&lt;/script&gt;<p></p>'
         self.assertEquals(parse(text), assumed)
+
+    def test_internal_link_hook_simple(self):
+        p = Parser()
+        """Internal link simple hook works"""
+        def testHook(parser, space, name):
+            return '<a href="%s">%s' % (name.replace(' ', '+'), name)
+        p.registerInternalLinkHook(None, testHook)
+        text = '[[Some link]]'
+        assumed = '<p><a href="Some+link">Some link\n</a></p>'
+        self.assertEquals(p.parse(text), assumed)
+
+    def test_internal_link_hook_namespace(self):
+        p = Parser()
+        """Internal link namespace works"""
+        def testHook(parser, space, name):
+            return 'space:%s,name:%s' % (space, name)
+        p.registerInternalLinkHook('Space', testHook)
+        text = '[[Space:Name]]'
+        assumed = '<p>space:Space,name:Name\n</p>'
+        self.assertEquals(p.parse(text), assumed)
 
 
 if __name__ == '__main__':
