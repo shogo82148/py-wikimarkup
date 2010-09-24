@@ -172,6 +172,14 @@ class WikimarkupTestCase(unittest.TestCase):
         assumed = '<p>space:Space,name:Name\n</p>'
         self.assertEquals(p.parse(text), assumed)
 
+    def test_nowiki(self):
+        """<nowiki> escapes formatting"""
+        p = Parser()
+        text = "<nowiki>\n\n# item '''1'''\nitem ''2''\n\n</nowiki>"
+        assumed = u"<p>\n\n# item '''1'''\nitem ''2''\n\n\n</p>"
+
+        self.assertEquals(p.parse(text), assumed)
+
 
 if __name__ == '__main__':
     unittest.main()
