@@ -527,7 +527,7 @@ class BaseParser(object):
             return text.encode("utf-8")
         return text
 
-    def strip(self, text, stripcomments=False, dontstrip=[]):
+    def strip(self, text, stripcomments=True, dontstrip=[]):
         render = True
 
         commentState = {}

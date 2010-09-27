@@ -104,6 +104,13 @@ class WikimarkupTestCase(unittest.TestCase):
         assumed = '<p>\n</p>'
         self.assertEquals(parse(text), assumed)
 
+        text = ('<!-- Comment\n\n\n= Heading =\n'
+                'Firefox has <em>hidden</em> <!-- <strong>settings</strong>\n'
+                 'more \n-->\n\n# follow\n# by\n\n= Another heading =')
+        assumed =  ('<p>\n</p>\n<ol><li> follow\n</li><li> by\n</li></ol>\n'
+                    '<h1 id="w_another-heading">Another heading</h1>')
+        self.assertEquals(parse(text), assumed)
+
     def testLessThanBracket(self):
         """
         Make sure strings like "<- test" aren't removed
