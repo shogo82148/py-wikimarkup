@@ -46,10 +46,10 @@ _htmlpairs = ( # Tags that must be closed
     u'sup', u'h1', u'h2', u'h3', u'h4', u'h5', u'h6', u'cite', u'code',
     u'em', u's', u'strike', u'strong', u'tt', u'var', u'div', u'center',
     u'blockquote', u'ol', u'ul', u'dl', u'table', u'caption', u'pre',
-    u'p', u'span', u'u', u'li', u'dd', u'dt',
+    u'p', u'span', u'u', u'li', u'dd', u'dt', u'video',
 )
 _htmlsingle = (  # Elements that cannot have close tags
-    u'br', u'hr', u'img',
+    u'br', u'hr', u'img', u'source',
 )
 _htmlnest = ( # Tags that can be nested--??
     u'table', u'tr', u'td', u'th', u'div', u'blockquote', u'ol', u'ul',
@@ -416,6 +416,8 @@ def setupAttributeWhitelist():
         u'u':            common,
         u'font':        common + ( u'size', u'color', u'face' ),
         u'hr':            common + ( u'noshade', u'size', u'width' ),
+        u'video':       common + ( u'width', u'height', u'controls' ),
+        u'source':       common + ( u'src', u'type' ),
     }
 _whitelist = setupAttributeWhitelist()
 _page_cache = {}
