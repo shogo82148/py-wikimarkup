@@ -39,7 +39,7 @@ _space = re.compile(ur'\s+', re.UNICODE)
 _closePrePat = re.compile(u"</pre", re.UNICODE | re.IGNORECASE)
 _openPrePat = re.compile(u"<pre", re.UNICODE | re.IGNORECASE)
 _openMatchPat = re.compile(u"(<table|<blockquote|<h1|<h2|<h3|<h4|<h5|<h6|<pre|<tr|<p|<ul|<ol|<li|</center|</tr|</td|</th)", re.UNICODE | re.IGNORECASE)
-_tagPattern = re.compile(ur'^(/?)(\w+)([^>]*?)(/?>)([^<]*)$', re.UNICODE)    
+_tagPattern = re.compile(ur'^(/?)(\w+)([^>]*?)(/?>)([^<]*)$', re.UNICODE)
 
 _htmlpairs = ( # Tags that must be closed
     u'b', u'del', u'i', u'ins', u'u', u'font', u'big', u'small', u'sub',
@@ -54,9 +54,10 @@ _htmlsingle = (  # Elements that cannot have close tags
 _htmlnest = ( # Tags that can be nested--??
     u'table', u'tr', u'td', u'th', u'div', u'blockquote', u'ol', u'ul',
     u'dl', u'font', u'big', u'small', u'sub', u'sup', u'span', u'img',
+    u'tbody', u'thead', u'tfoot', u'colgroup', u'col',
 )
 _tabletags = ( # Can only appear inside table
-    u'td', u'th', u'tr',
+    u'td', u'th', u'tr', u'tbody', u'thead', u'tfoot', u'colgroup', u'col',
 )
 _htmllist = ( # Tags used by list
     u'ul', u'ol',
@@ -64,7 +65,7 @@ _htmllist = ( # Tags used by list
 _listtags = ( # Tags that can appear in a list
     u'li',
 )
-_htmlsingleallowed = _htmlsingle + _tabletags 
+_htmlsingleallowed = _htmlsingle + _tabletags
 _htmlelements = _htmlsingle + _htmlpairs + _htmlnest
 
 _htmlEntities = {
@@ -451,7 +452,7 @@ class BaseParser(object):
         self.tagHooks = {}
         # [[internal link]] hooks
         self.internalLinkHooks = {}
-        
+
     #def __del__(self):
     #    if not self.keep_env:
     #        global env
@@ -479,10 +480,10 @@ class BaseParser(object):
 
     #def store_object(self, namespace, key, value=True):
     #    """
-    #    Used to store objects in the environment 
+    #    Used to store objects in the environment
     #    which assists in preventing recursive imports.
     #    """
-    #    # Store the item to not reprocess it    
+    #    # Store the item to not reprocess it
     #    if namespace not in self.env:
     #        self.env[namespace] = {}
     #    self.env[namespace][key] = value
@@ -568,7 +569,7 @@ class BaseParser(object):
                 # Just stripping tags; keep the source
                 output = tag
 
-            # Unstrip the output, because unstrip() is no longer recursive so 
+            # Unstrip the output, because unstrip() is no longer recursive so
             # it won't do it itself
             output = self.unstrip(output)
 
@@ -704,15 +705,15 @@ class BaseParser(object):
             end = text.find(u'-->', start)
             if end == -1:
                 break
-            end += 3    
-        
+            end += 3
+
             spaceStart = max(0, start-1)
             spaceEnd = end
             while text[spaceStart] == u' ' and spaceStart > 0:
                 spaceStart -= 1
             while text[spaceEnd] == u' ':
                 spaceEnd += 1
-        
+
             if text[spaceStart] == u'\n' and text[spaceEnd] == u'\n':
                 sb.append(text[last:spaceStart])
                 sb.append(u'\n')
@@ -720,7 +721,7 @@ class BaseParser(object):
             else:
                 sb.append(text[last:spaceStart+1])
                 last = spaceEnd
-        
+
             start = text.find(u'<!--', end)
         sb.append(text[last:])
         return u''.join(sb)
@@ -740,7 +741,7 @@ class BaseParser(object):
             else:
                 value = ''
             attribs[key] = self.decodeCharReferences(value)
-        
+
             match = scanner.search()
         return attribs
 
@@ -789,22 +790,22 @@ class BaseParser(object):
     def fixTagAttributes(self, text, element):
         if text.strip() == u'':
             return u''
-    
+
         stripped = self.validateTagAttributes(self.decodeTagAttributes(text), element)
-    
+
         sb = []
-    
+
         for attribute in stripped:
             value = stripped[attribute]
             encAttribute = attribute.replace(u'&', u'&amp;').replace(u'<', u'&lt;').replace(u'>', u'&gt;')
             encValue = self.safeEncodeAttribute(value)
-        
+
             sb.append(u' ')
             sb.append(encAttribute)
             sb.append(u'="')
             sb.append(encValue)
             sb.append(u'"')
-    
+
         return u''.join(sb)
 
     def validateCodepoint(self, codepoint):
@@ -882,16 +883,16 @@ class BaseParser(object):
     def checkCss(self, value):
         """docstring for checkCss"""
         stripped = self.decodeCharReferences(value)
-    
+
         stripped = _cssCommentPat.sub(u'', stripped)
         value = stripped
-    
+
         stripped = _toUTFPat.sub(self._convertToUtf8, stripped)
         stripped.replace(u'\\', u'')
         if _hackPat.search(stripped):
             # someone is haxx0ring
             return False
-    
+
         return value
 
     def escapeId(self, value):
@@ -936,7 +937,7 @@ class BaseParser(object):
                     numBold += 1
                 else:
                     numBold += 1
-    
+
         # If there is an odd number of both bold and italics, it is likely
         # that one of the bold ones was meant to be an apostrophe followed
         # by italics. Which one we cannot know for certain, but it is more
@@ -958,7 +959,7 @@ class BaseParser(object):
                     else:
                         if firstMultiLetterWord == -1:
                             firstMultiLetterWord = i
-        
+
             # If there is a single-letter word, use it!
             if firstSingleLetterWord > -1:
                 arr[firstSingleLetterWord] = u"''"
@@ -973,7 +974,7 @@ class BaseParser(object):
             elif firstSpace > -1:
                 arr[firstSpace] = u"''"
                 arr[firstSpace-1] += u"'"
-    
+
         # Now let's actually convert our apostrophic mush to HTML!
         output = []
         buffer = None
@@ -1051,7 +1052,7 @@ class BaseParser(object):
                     else: # ''
                         buffer = []
                         state = 'both'
-    
+
         if state == 'both':
             output.append(u"<em><strong>")
             output.append(u''.join(buffer))
@@ -1147,7 +1148,7 @@ class BaseParser(object):
                 # Found some characters after the protocol that look promising
                 url = protocol + match.group(1)
                 trail = match.group(2)
-            
+
                 # special case: handle urls as url args:
                 # http://www.example.com/foo?=http://www.example.com/bar
                 if len(trail) == 0 and len(bits) > i and _protocolsPat.match(bits[i]):
@@ -1156,7 +1157,7 @@ class BaseParser(object):
                         url += bits[i] + match.group(1)
                         i += 2
                         trail = match.group(2)
-            
+
                 # The characters '<' and '>' (which were escaped by
                 # removeHTMLtags()) should not be included in
                 # URLs, per RFC 2396.
@@ -1164,11 +1165,11 @@ class BaseParser(object):
                 if pos != -1:
                     trail = url[pos:] + trail
                     url = url[0:pos]
-            
+
                 sep = ',;.:!?'
                 if '(' not in url:
                     sep += ')'
-                
+
                 i = len(url)-1
                 while i >= 0:
                     char = url[i]
@@ -1176,13 +1177,13 @@ class BaseParser(object):
                         break
                     i -= 1
                 i += 1
-            
+
                 if i != len(url):
                     trail = url[i:] + trail
                     url = url[0:i]
-            
+
                 url = cleanURL(url)
-            
+
                 sb.append(u'<a href="')
                 sb.append(url)
                 sb.append(u'">')
@@ -1205,23 +1206,23 @@ class BaseParser(object):
         # Normalize any HTML entities in input. They will be
         # re-escaped by makeExternalLink().
         url = self.decodeCharReferences(url)
-    
+
         # Escape any control characters introduced by the above step
         url = _controlCharsPat.sub(self.urlencode, url)
-    
+
         # Validate hostname portion
         match = _hostnamePat.match(url)
         if match:
             protocol, host, rest = match.groups()
-        
+
             # Characters that will be ignored in IDNs.
             # http://tools.ietf.org/html/3454#section-3.1
             # Strip them before further processing so blacklists and such work.
-        
+
             _stripPat.sub('', host)
-        
+
             # @fixme: validate hostnames here
-        
+
             return protocol + host + rest
         else:
             return url
@@ -1263,12 +1264,12 @@ class BaseParser(object):
           '<element param="x">tag content</element>' ) )
         """
         stripped = u''
-    
+
         taglist = u'|'.join(elements)
         if taglist not in _startRegexHash:
             _startRegexHash[taglist] = re.compile(ur"<(" + taglist + ur")(\s+[^>]*?|\s*?)(/?>)|<(!--)", re.UNICODE | re.IGNORECASE)
         start = _startRegexHash[taglist]
-    
+
         while text != u'':
             p = start.split(text, 1)
             stripped += p[0]
@@ -1284,12 +1285,12 @@ class BaseParser(object):
                 attributes = p[2]
                 close = p[3]
             inside = p[5]
-        
+
             global _extractTagsAndParams_n
             marker = self.uniq_prefix + u'-' + element + u'-' + (u"%08X" % _extractTagsAndParams_n) + u'-QINU'
             _extractTagsAndParams_n += 1
             stripped += marker
-        
+
             if close == u'/>':
                 # empty element tag, <tag />
                 content = None
@@ -1311,7 +1312,7 @@ class BaseParser(object):
                 else:
                     tail = q[1]
                     text = q[2]
-        
+
             matches[marker] = (
                 element,
                 content,
@@ -1334,7 +1335,7 @@ class BaseParser(object):
         result = u''
         if mLastSection != u'':
             result = u'</' + mLastSection + u'>\n'
-    
+
         return result
 
     def getCommon(self, st1, st2):
@@ -1346,7 +1347,7 @@ class BaseParser(object):
         shorter = len(st2)
         if fl < shorter:
             shorter = fl
-    
+
         i = 0
         while i < shorter:
             if st1[i] != st2[i]:
@@ -1360,7 +1361,7 @@ class BaseParser(object):
         element appropriate to the prefix character passed into them.
         """
         result = self.closeParagraph(mLastSection)
-    
+
         mDTopen = False
         if char == u'*':
             result += u'<ul><li>'
@@ -1373,7 +1374,7 @@ class BaseParser(object):
             mDTopen = True
         else:
             result += u'<!-- ERR 1 -->'
-    
+
         return result, mDTopen
 
     def nextItem(self, char, mDTopen):
@@ -1522,7 +1523,7 @@ class BaseParser(object):
                     else:
                         break
                 pref = oLine[0:prefixLength]
-            
+
                 # eh?
                 pref2 = pref.replace(u';', u':')
                 t = oLine[prefixLength:]
@@ -1541,7 +1542,7 @@ class BaseParser(object):
                 if tmpMDTopen is not None:
                     mDTopen = tmpMDTopen
                 paragraphStack = False
-            
+
                 if pref[-1:] == u';':
                     # The one nasty exception: definition lists work like this:
                     # ; title : definition text
@@ -1557,7 +1558,7 @@ class BaseParser(object):
                         output.append(tmpOutput)
                         if tmpMDTopen is not None:
                             mDTopen = tmpMDTopen
-        
+
             elif prefixLength or lastPrefixLength:
                 # Either open or close a level...
                 commonPrefixLength = self.getCommon(pref, lastPrefix)
@@ -1581,7 +1582,7 @@ class BaseParser(object):
                     output.append(tmpOutput)
                     mLastSection = u''
                     mInPre = False
-                
+
                     if char == u';':
                         # FIXME: This is dupe of code above
                         term = t2 = u''
@@ -1596,9 +1597,9 @@ class BaseParser(object):
                                 mDTopen = tmpMDTopen
 
                     commonPrefixLength += 1
-            
+
                 lastPrefix = pref2
-        
+
             if prefixLength == 0:
                 # No prefix (not in list)--go to paragraph mode
                 # XXX: use a stack for nestable elements like span, table and div
@@ -1646,25 +1647,25 @@ class BaseParser(object):
                                 output.append(self.closeParagraph(mLastSection) + u'<p>')
                                 mLastSection = u'p'
                                 mInPre = False
-        
+
             # somewhere above we forget to get out of pre block (bug 785)
             if preCloseMatch and mInPre:
                 mInPre = False
-        
+
             if paragraphStack == False:
                 output.append(t + u"\n")
-    
+
         while prefixLength:
             output.append(self.closeList(pref2[prefixLength-1], mDTopen))
             mDTopen = False
             prefixLength -= 1
-    
+
         if mLastSection != u'':
             output.append(u'</' + mLastSection + u'>')
             mLastSection = u''
-    
+
         return ''.join(output)
-        
+
 class Parser(BaseParser):
 
     def __init__(self, base_url=None):
@@ -1737,12 +1738,12 @@ class Parser(BaseParser):
 
         # This function is called recursively. To keep track of arguments we need a stack:
         self.arg_stack.append(args)
-    
+
         braceCallbacks = {}
         if not argsOnly:
             braceCallbacks[2] = [None, self.braceSubstitution]
         braceCallbacks[3] = [None, self.argSubstitution]
-    
+
         callbacks = {
             u'{': {
                 'end': u'}',
@@ -1759,7 +1760,7 @@ class Parser(BaseParser):
         }
         text = replace_callback(text, callbacks)
         mArgStack.pop()
-    
+
         return text
 
     def replace_callback(self, text, callbacks):
@@ -1771,7 +1772,7 @@ class Parser(BaseParser):
         lastOpeningBrace = -1       # last not closed parentheses
 
         validOpeningBraces = u''.join(callbacks.keys())
-    
+
         i = 0
         while i < len(text):
             if lastOpeningBrace == -1:
@@ -1802,7 +1803,7 @@ class Parser(BaseParser):
                     continue
             else:
                 break
-        
+
             if found == 'open':
                 # found opening brace, let's add it to parentheses stack
                 piece = {
@@ -1835,14 +1836,14 @@ class Parser(BaseParser):
                         count += 1
                     else:
                         break
-            
-                # check for maximum matching characters (if there are 5 closing 
+
+                # check for maximum matching characters (if there are 5 closing
                 # characters, we will probably need only 3 - depending on the rules)
                 matchingCount = 0
                 matchingCallback = None
                 cbType = callbacks[openingBraceStack[lastOpeningBrace]['brace']]
                 if count > cbType['max']:
-                    # The specified maximum exists in the callback array, unless the caller 
+                    # The specified maximum exists in the callback array, unless the caller
                     # has made an error
                     matchingCount = cbType['max']
                 else:
@@ -1852,24 +1853,24 @@ class Parser(BaseParser):
                     matchingCount = count
                     while matchingCount > 0 and matchingCount not in cbType['cb']:
                         matchingCount -= 1
-            
+
                 if matchingCount <= 0:
                     i += count
                     continue
                 matchingCallback = cbType['cb'][matchingCount]
-            
+
                 # let's set a title or last part (if '|' was found)
                 if openingBraceStack[lastOpeningBrace]['parts'] is None:
                     openingBraceStack[lastOpeningBrace]['title'] = \
                         text[openingBraceStack[lastOpeningBrace]['partStart']:i]
                 else:
-                    openingBraceStack[lastOpeningBrace]['parts'].append( 
+                    openingBraceStack[lastOpeningBrace]['parts'].append(
                         text[openingBraceStack[lastOpeningBrace]['partStart']:i]
                     )
 
                 pieceStart = openingBraceStack[lastOpeningBrace]['startAt'] - matchingCount
                 pieceEnd = i + matchingCount
-            
+
                 if callable(matchingCallback):
                     cbArgs = {
                         'text': text[pieceStart:pieceEnd],
@@ -1884,10 +1885,10 @@ class Parser(BaseParser):
                 else:
                     # null value for callback means that parentheses should be parsed, but not replaced
                     i += matchingCount
-            
+
                 # reset last opening parentheses, but keep it in case there are unused characters
                 piece = {
-                    'brace': openingBraceStack[lastOpeningBrace]['brace'],   
+                    'brace': openingBraceStack[lastOpeningBrace]['brace'],
                     'braceEnd': openingBraceStack[lastOpeningBrace]['braceEnd'],
                     'count': openingBraceStack[lastOpeningBrace]['count'],
                     'title': u'',
@@ -1896,7 +1897,7 @@ class Parser(BaseParser):
                 }
                 openingBraceStack[lastOpeningBrace] = None
                 lastOpeningBrace -= 1
-            
+
                 if matchingCount < piece['count']:
                     piece['count'] -= matchingCount
                     piece['startAt'] -= matchingCount
@@ -1908,9 +1909,9 @@ class Parser(BaseParser):
                             lastOpeningBrace += 1
                             openingBraceStack[lastOpeningBrace] = piece
                             break
-                    
+
                         piece['count'] -= 1
-        
+
             elif found == 'pipe':
                 # lets set a title if it is a first separator, or next part otherwise
                 if opeingBraceStack[lastOpeningBrace]['parts'] is None:
@@ -1934,16 +1935,16 @@ class Parser(BaseParser):
         ltr = [] # tr attributes
         has_opened_tr = [] # Did this table open a <tr> element?
         indent_level = 0 # indent level of the table
-    
+
         for k, x in zip(range(len(t)), t):
             x = x.strip()
             fc = x[0:1]
             matches = _zomgPat.match(x)
             if matches:
                 indent_level = len(matches.group(1))
-            
+
                 attributes = self.unstripForHTML(matches.group(2))
-            
+
                 t[k] = u'<dl><dd>'*indent_level + u'<table' + self.fixTagAttributes(attributes, u'table') + u'>'
                 td.append(False)
                 ltd.append(u'')
@@ -1995,9 +1996,9 @@ class Parser(BaseParser):
                 # by earlier parser steps, but should avoid splitting up eg
                 # attribute values containing literal "||".
                 x = x.split(u'||')
-            
+
                 t[k] = u''
-            
+
                 # Loop through each table cell
                 for theline in x:
                     z = ''
@@ -2021,23 +2022,23 @@ class Parser(BaseParser):
                     else:
                         l = u''
                     ltd.append(l)
-                
+
                     #Cell parameters
                     y = theline.split(u'|', 1)
                     # Note that a '|' inside an invalid link should not
                     # be mistaken as delimiting cell parameters
                     if y[0].find(u'[[') != -1:
                         y = [theline]
-                    
+
                     if len(y) == 1:
                         y = z + u"<" + l + u">" + y[0]
                     else:
                         attributes = self.unstripForHTML(y[0])
                         y = z + u"<" + l + self.fixTagAttributes(attributes, l) + u">" + y[1]
-                
+
                     t[k] += y
                     td.append(True)
-    
+
         while len(td) > 0:
             l = ltd.pop()
             if td.pop():
@@ -2047,12 +2048,12 @@ class Parser(BaseParser):
             if not has_opened_tr.pop():
                 t.append(u'<tr><td></td></tr>')
             t.append(u'</table>')
-    
+
         text = u'\n'.join(t)
         # special case: don't return empty table
         if text == u"<table>\n<tr><td></td></tr>\n</table>":
             text = u''
-    
+
         return text
 
     def formatHeadings(self, text, isMain):
@@ -2062,7 +2063,7 @@ class Parser(BaseParser):
         2) Add an [edit] link to sections for logged in users who have enabled the option
         3) Add a Table of contents on the top for users who have enabled the option
         4) Auto-anchor headings
-    
+
         It loops through all headlines, collects the necessary data, then splits up the
         string and re-inserts the newly formatted headlines.
         """
@@ -2081,7 +2082,7 @@ class Parser(BaseParser):
         # if there are fewer than 4 headlines in the article, do not show TOC
         # unless it's been explicitly enabled.
         enoughToc = self.show_toc and (numMatches >= 4 or text.find(u"<!--MWTOC-->") != -1)
-    
+
         # Allow user to stipulate that a page should have a "new section"
         # link added via __NEWSECTIONLINK__
         showNewSection = False
@@ -2116,27 +2117,27 @@ class Parser(BaseParser):
         refers = {}
         refcount = {}
         wgMaxTocLevel = 5
-    
+
         for match in matches:
             headline = match[2]
             istemplate = False
             templatetitle = u''
             templatesection = 0
             numbering = []
-        
+
             m = _templateSectionPat.search(headline)
             if m:
                 istemplate = True
                 templatetitle = b64decode(m[0])
                 templatesection = 1 + int(b64decode(m[1]))
                 headline = _templateSectionPat.sub(u'', headline)
-        
+
             if toclevel:
                 prevlevel = level
                 prevtoclevel = toclevel
-        
+
             level = matches[headlineCount][0]
-        
+
             if doNumberHeadings or enoughToc:
                 if level > prevlevel:
                     toclevel += 1
@@ -2145,7 +2146,7 @@ class Parser(BaseParser):
                         toc.append(u'<ul>')
                 elif level < prevlevel and toclevel > 1:
                     # Decrease TOC level, find level to jump to
-                
+
                     if toclevel == 2 and level < levelCount[1]:
                         toclevel = 1
                     else:
@@ -2162,20 +2163,20 @@ class Parser(BaseParser):
                         toc.append(u"</ul></li>" * max(prevtoclevel - toclevel, 0))
                 else:
                     toc.append(u"</li>")
-            
+
                 levelCount[toclevel] = level
-            
+
                 # count number of headlines for each level
                 sublevelCount[toclevel] += 1
                 for i in range(1, toclevel+1):
                     if sublevelCount[i]:
                         numbering.append(to_unicode(sublevelCount[i]))
-        
+
             # The canonized header is a version of the header text safe to use for links
             # Avoid insertion of weird stuff like <math> by expanding the relevant sections
             canonized_headline = self.unstrip(headline)
             canonized_headline = self.unstripNoWiki(canonized_headline)
-        
+
             # -- don't know what to do with this yet.
             # Remove link placeholders by the link text.
             #     <!--LINK number-->
@@ -2202,9 +2203,9 @@ class Parser(BaseParser):
             else:
                 refers[canonized_headline] += 1
             refcount[headlineCount] = refers[canonized_headline]
-        
+
             numbering = '.'.join(numbering)
-        
+
             # Don't number the heading if it is the only one (looks silly)
             if doNumberHeadings and numMatches > 1:
                 # the two are different if the line contains a link
@@ -2214,7 +2215,7 @@ class Parser(BaseParser):
             anchor = canonized_headline;
             if refcount[headlineCount] > 1:
                 anchor += u'_' + unicode(refcount[headlineCount])
-        
+
             if enoughToc:
                 toc.append(u'<li class="toclevel-')
                 toc.append(to_unicode(toclevel))
@@ -2225,16 +2226,16 @@ class Parser(BaseParser):
                 toc.append(u'</span> <span class="toctext">')
                 toc.append(tocline)
                 toc.append(u'</span></a>')
-        
+
     #        if showEditLink and (not istemplate or templatetitle != u""):
     #            if not head[headlineCount]:
     #                head[headlineCount] = u''
-    #            
+    #
     #            if istemplate:
     #                head[headlineCount] += sk.editSectionLinkForOther(templatetile, templatesection)
     #            else:
     #                head[headlineCount] += sk.editSectionLink(mTitle, sectionCount+1, headline_hint)
-        
+
             # give headline the correct <h#> tag
             if headlineCount not in head:
                 head[headlineCount] = []
@@ -2249,12 +2250,12 @@ class Parser(BaseParser):
             h.append(u'</h')
             h.append(to_unicode(level))
             h.append(u'>')
-        
+
             headlineCount += 1
 
             if not istemplate:
                 sectionCount += 1
-        
+
         if enoughToc:
             if toclevel < wgMaxTocLevel:
                 toc.append(u"</li>")
@@ -2263,9 +2264,9 @@ class Parser(BaseParser):
             toc.append(u'</ul></div>')
 
         # split up and insert constructed headlines
-    
+
         blocks = _headerPat.split(text)
-    
+
         i = 0
         len_blocks = len(blocks)
         forceTocPosition = text.find(u"<!--MWTOC-->")
@@ -2317,7 +2318,7 @@ def truncate_url(url, length=40):
         secondpart = '...' + secondpart
     t_url = firstpart+secondpart
     return t_url
-    
+
 def to_unicode(text, charset=None):
     """Convert a `str` object to an `unicode` object.
 
