@@ -1712,7 +1712,7 @@ class Parser(BaseParser):
         if utf8:
             text.encode("utf-8")
         # Pass output through bleach and linkify
-        text = self.bleach.linkify(text)
+        text = self.bleach.linkify(text, nofollow=False)
         return self.bleach.clean(text, tags=self.tags,
                                  attributes=self.attributes)
 
