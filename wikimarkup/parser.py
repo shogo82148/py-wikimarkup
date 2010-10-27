@@ -46,7 +46,7 @@ _htmlpairs = ( # Tags that must be closed
     u'sup', u'h1', u'h2', u'h3', u'h4', u'h5', u'h6', u'cite', u'code',
     u'em', u's', u'strike', u'strong', u'tt', u'var', u'div', u'center',
     u'blockquote', u'ol', u'ul', u'dl', u'table', u'caption', u'pre',
-    u'p', u'span', u'u', u'li', u'dd', u'dt', u'video',
+    u'p', u'span', u'u', u'li', u'dd', u'dt', u'video', u'section',
 )
 _htmlsingle = (  # Elements that cannot have close tags
     u'br', u'hr', u'img', u'source',
@@ -54,7 +54,7 @@ _htmlsingle = (  # Elements that cannot have close tags
 _htmlnest = ( # Tags that can be nested--??
     u'table', u'tr', u'td', u'th', u'div', u'blockquote', u'ol', u'ul',
     u'dl', u'font', u'big', u'small', u'sub', u'sup', u'span', u'img',
-    u'tbody', u'thead', u'tfoot', u'colgroup', u'col',
+    u'tbody', u'thead', u'tfoot', u'colgroup', u'col', u'section',
 )
 _tabletags = ( # Can only appear inside table
     u'td', u'th', u'tr', u'tbody', u'thead', u'tfoot', u'colgroup', u'col',
