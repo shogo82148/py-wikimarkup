@@ -1671,14 +1671,12 @@ class Parser(BaseParser):
     def __init__(self, base_url=None):
         super(Parser, self).__init__()
         self.base_url = base_url
-        self.bleach = bleach.Bleach()
 
     def parse(self, text, show_toc=True, tags=ALLOWED_TAGS,
-              attributes=ALLOWED_ATTRIBUTES):
+              attributes=ALLOWED_ATTRIBUTES, styles=[]):
         """Returns HTML from MediaWiki markup"""
         self.show_toc = show_toc
         self.tags = tags
-        self.attributes = attributes
         utf8 = isinstance(text, str)
         text = to_unicode(text)
         if text[-1:] != u'\n':
@@ -1712,9 +1710,9 @@ class Parser(BaseParser):
         if utf8:
             text.encode("utf-8")
         # Pass output through bleach and linkify
-        text = self.bleach.linkify(text, nofollow=False)
-        return self.bleach.clean(text, tags=self.tags,
-                                 attributes=self.attributes)
+        text = bleach.linkify(text, nofollow=False)
+        return bleach.clean(text, tags=self.tags, attributes=attributes,
+                            styles=styles)
 
     def checkTOC(self, text):
         if text.find(u"__NOTOC__") != -1:
