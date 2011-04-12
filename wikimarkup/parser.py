@@ -428,7 +428,7 @@ _page_cache = {}
 ALLOWED_TAGS = list(_htmlelements + ('a',))
 
 ALLOWED_ATTRIBUTES = {
-    'a': ['href', 'title'],
+    'a': ['href', 'title', 'rel'],
     'div': ['id'],
     'h1': ['id'],
     'h2': ['id'],
@@ -1673,7 +1673,7 @@ class Parser(BaseParser):
         self.base_url = base_url
 
     def parse(self, text, show_toc=True, tags=ALLOWED_TAGS,
-              attributes=ALLOWED_ATTRIBUTES, styles=[]):
+              attributes=ALLOWED_ATTRIBUTES, styles=[], nofollow=False):
         """Returns HTML from MediaWiki markup"""
         self.show_toc = show_toc
         self.tags = tags
@@ -1710,7 +1710,7 @@ class Parser(BaseParser):
         if utf8:
             text.encode("utf-8")
         # Pass output through bleach and linkify
-        text = bleach.linkify(text, nofollow=False)
+        text = bleach.linkify(text, nofollow=nofollow)
         return bleach.clean(text, tags=self.tags, attributes=attributes,
                             styles=styles)
 
@@ -2286,10 +2286,11 @@ class Parser(BaseParser):
             return full
 
 def parse(text, show_toc=True, tags=ALLOWED_TAGS,
-          attributes=ALLOWED_ATTRIBUTES):
+          attributes=ALLOWED_ATTRIBUTES, nofollow=False):
     """Returns HTML from MediaWiki markup"""
     p = Parser()
-    return p.parse(text, show_toc=show_toc, tags=tags, attributes=attributes)
+    return p.parse(text, show_toc=show_toc, tags=tags, attributes=attributes,
+                   nofollow=nofollow)
 
 def parselite(text):
     """Returns HTML from MediaWiki markup ignoring

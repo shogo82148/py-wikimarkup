@@ -31,10 +31,18 @@ class WikimarkupTestCase(unittest.TestCase):
         text = "[mydomain.com/]"
         self.assertEquals(
             parse(text),
-            '<p>[<a href="http://mydomain.com">mydomain.com</a>/]\n</p>')
+            '<p>[<a href="http://mydomain.com/">mydomain.com/</a>]\n</p>')
 
         text = "[/hello/world]"
         self.assertEquals(parse(text), '<p><a href="/hello/world">/hello/world</a>\n</p>')
+
+    def testNofollowLinks(self):
+        """
+        Test the parsing with nofollow set to True.
+        """
+        text = 'http://mydomain.com/test'
+        expected = '<p><a href="http://mydomain.com/test" rel="nofollow">http://mydomain.com/test</a>\n</p>'
+        self.assertEquals(parse(text, nofollow=True), expected)
 
     def testStyles(self):
         """
