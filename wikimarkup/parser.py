@@ -1712,7 +1712,7 @@ class Parser(BaseParser):
         # Pass output through bleach and linkify
         text = bleach.linkify(text, nofollow=nofollow)
         return bleach.clean(text, tags=self.tags, attributes=attributes,
-                            styles=styles)
+                            styles=styles, strip_comments=False)
 
     def checkTOC(self, text):
         if text.find(u"__NOTOC__") != -1:
