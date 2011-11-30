@@ -1673,7 +1673,8 @@ class Parser(BaseParser):
         self.base_url = base_url
 
     def parse(self, text, show_toc=True, tags=ALLOWED_TAGS,
-              attributes=ALLOWED_ATTRIBUTES, styles=[], nofollow=False):
+              attributes=ALLOWED_ATTRIBUTES, styles=[], nofollow=False,
+              strip_comments=False):
         """Returns HTML from MediaWiki markup"""
         self.show_toc = show_toc
         self.tags = tags
@@ -1685,7 +1686,7 @@ class Parser(BaseParser):
         else:
             taggedNewline = False
 
-        text = self.strip(text)
+        text = self.strip(text, stripcomments=strip_comments)
         text = self.removeHtmlTags(text)
         if self.base_url:
             text = self.replaceVariables(text)
