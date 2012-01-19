@@ -117,7 +117,7 @@ class WikimarkupTestCase(unittest.TestCase):
                  'more \n-->\n\n# follow\n# by\n\n= Another heading =')
         assumed =  ('<p>\n</p>\n<ol><li> follow\n</li><li> by\n</li></ol>\n'
                     '<h1 id="w_another-heading">Another heading</h1>')
-        self.assertEquals(parse(text), assumed)
+        self.assertEquals(parse(text, strip_comments=True), assumed)
 
     def testLessThanBracket(self):
         """

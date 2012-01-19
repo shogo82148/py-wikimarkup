@@ -2333,11 +2333,11 @@ class Parser(BaseParser):
             return full
 
 def parse(text, show_toc=True, tags=ALLOWED_TAGS,
-          attributes=ALLOWED_ATTRIBUTES, nofollow=False):
+          attributes=ALLOWED_ATTRIBUTES, nofollow=False, strip_comments=False):
     """Returns HTML from MediaWiki markup"""
     p = Parser()
     return p.parse(text, show_toc=show_toc, tags=tags, attributes=attributes,
-                   nofollow=nofollow)
+                   nofollow=nofollow, strip_comments=strip_comments)
 
 def parselite(text):
     """Returns HTML from MediaWiki markup ignoring
