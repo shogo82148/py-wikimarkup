@@ -1164,12 +1164,12 @@ class BaseParser(object):
             params = template.split('|')
             template_name = params[0]
             p = {}
-            for i, val in enumerate(params):
+            for i, val in enumerate(params[1:]):
                 param = val.split('=', 2)
                 if len(param)==1:
-                    p[i] = param[0]
+                    p[i+1] = param[0]
                 else:
-                    p[i] = param[1]
+                    p[i+1] = param[1]
                     p[param[0]] = param[1]
 
             #Template
