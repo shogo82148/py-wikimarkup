@@ -1175,7 +1175,7 @@ class BaseParser(object):
             #Template
             hook = self.templateHooks.get(template_name, None) or self.templateHooks.get('*', None)
             if hook:
-                text = pre + hook(template_name, p) + post
+                text = pre + hook(self, template_name, p) + post
         return text
 
     # TODO: fix this so it actually works

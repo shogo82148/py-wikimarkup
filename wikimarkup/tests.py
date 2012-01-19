@@ -197,8 +197,8 @@ class WikimarkupTestCase(unittest.TestCase):
 
     def test_tempalate(self):
         """{{template}} insert template"""
-        def testHook(name, param):
-            param_names = sorted(param.items())
+        def testHook(parser, name, param):
+            param_names = sorted(param.keys())
             param_str = ",".join("%s=%s" % (i, param[i]) for i in param_names)
             return "'''%s(%s)'''" % (name, param_str)
 
