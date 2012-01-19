@@ -195,6 +195,27 @@ class WikimarkupTestCase(unittest.TestCase):
 
         self.assertEquals(p.parse(text), assumed)
 
+    def test_tempalate(self):
+        """{{template}} insert template"""
+        def testHook(parser, name, param):
+            param_names = sorted(param.keys())
+            param_str = ",".join("%s=%s" % (i, param[i]) for i in param_names)
+            return "'''%s(%s)'''" % (name, param_str)
+
+        p = Parser()
+        text = "{{template}}"
+        assumed = "<p>{{template}}\n</p>"
+        self.assertEquals(p.parse(text), assumed)
+
+        p.registerTemplateHook('template', testHook)
+        text = "{{template}}"
+        assumed = "<p><strong>template()</strong>\n</p>"
+        self.assertEquals(p.parse(text), assumed)
+
+        p.registerTemplateHook('*', testHook)
+        text = "{{template2|param1|a=param2}}"
+        assumed = "<p><strong>template2(1=param1,2=param2,a=param2)</strong>\n</p>"
+        self.assertEquals(p.parse(text), assumed)
 
 if __name__ == '__main__':
     unittest.main()
