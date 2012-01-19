@@ -452,6 +452,7 @@ class BaseParser(object):
         self.tagHooks = {}
         # [[internal link]] hooks
         self.internalLinkHooks = {}
+        self.templateHooks = {}
 
     #def __del__(self):
     #    if not self.keep_env:
@@ -477,6 +478,17 @@ class BaseParser(object):
         parser.registerInternalLinkHook('*', internalLinkHook)  # called for [[anything]] not hooked above
         """
         self.internalLinkHooks[tag] = function
+
+    def registerTemplateHook(self, tag, function):
+        """
+        Register a hook called for {{templates}}.  There is no default
+        handling for internal links.
+
+        def templateHook(template_name, parameter):
+        ...
+        return replacement
+        """
+        self.templateHooks[tag] = function
 
     #def store_object(self, namespace, key, value=True):
     #    """
@@ -1133,6 +1145,39 @@ class BaseParser(object):
                 i += 2
         return ''.join(sb)
 
+    def replaceTemplate(self, text):
+        processed = 0
+        while True:
+            # Find Template
+            start = text.find('{{', processed)
+            if start<0:
+                break
+            end = text.find('}}', start)
+            if end<0:
+                break
+            processed = end
+            pre = text[0:start]
+            post = text[end+2:]
+            template = text[start+2:end]
+
+            #Parse Parameters
+            params = template.split('|')
+            template_name = params[0]
+            p = {}
+            for i, val in enumerate(params):
+                param = val.split('=', 2)
+                if len(param)==1:
+                    p[i] = param[0]
+                else:
+                    p[i] = param[1]
+                    p[param[0]] = param[1]
+
+            #Template
+            hook = self.templateHooks.get(template_name, None) or self.templateHooks.get('*', None)
+            if hook:
+                text = pre + hook(template_name, p) + post
+        return text
+
     # TODO: fix this so it actually works
     def replaceFreeExternalLinks(self, text):
         bits = _protocolPat.split(text)
@@ -1687,6 +1732,7 @@ class Parser(BaseParser):
             taggedNewline = False
 
         text = self.strip(text, stripcomments=strip_comments)
+        text = self.replaceTemplate(text)
         text = self.removeHtmlTags(text)
         if self.base_url:
             text = self.replaceVariables(text)
