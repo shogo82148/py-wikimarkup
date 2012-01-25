@@ -1146,16 +1146,43 @@ class BaseParser(object):
         return ''.join(sb)
 
     def replaceTemplate(self, text):
+        re_bracket = re.compile(r'{{|}}')
         processed = 0
+
+        def findTemplate(processed=0):
+            nest = 0
+            start = 0
+            end = 0
+            while True:
+                m = re_bracket.search(text, processed)
+                if not m:
+                    return None
+                if m.group()=='{{':
+                    if nest==0:
+                        start = m.start()
+                    nest += 1
+                else:
+                    nest -= 1
+                    if nest==0:
+                        end = m.start()
+                        break
+                processed = m.end()
+            return (start, end)
+
+        def add_param(params, i, val):
+            param = val.split('=', 2)
+            if len(param)==1:
+                params[i] = param[0]
+            else:
+                params[i] = param[1]
+                params[param[0]] = param[1]
+                    
         while True:
             # Find Template
-            start = text.find('{{', processed)
-            if start<0:
+            pos = findTemplate(processed)
+            if not pos:
                 break
-            end = text.find('}}', start)
-            if end<0:
-                break
-            processed = end
+            start, end = pos
             pre = text[0:start]
             post = text[end+2:]
             template = text[start+2:end]
@@ -1164,18 +1191,28 @@ class BaseParser(object):
             params = template.split('|')
             template_name = params[0]
             p = {}
-            for i, val in enumerate(params[1:]):
-                param = val.split('=', 2)
-                if len(param)==1:
-                    p[i+1] = param[0]
-                else:
-                    p[i+1] = param[1]
-                    p[param[0]] = param[1]
+            param = []
+
+            i = 1
+            for v in params[1:]:
+                param.append(v)
+                val = '|'.join(param)
+                if val.count('{')==val.count('}') and val.count('[')==val.count(']'):
+                    add_param(p, i, val)
+                    i += 1
+                    param = []
+            if len(param)>0:
+                val = '|'.join(param)
+                add_param(p, i, val)
 
             #Template
             hook = self.templateHooks.get(template_name, None) or self.templateHooks.get('*', None)
             if hook:
-                text = pre + hook(self, template_name, p) + post
+                res = hook(self, template_name, p)
+                text = pre + res + post
+                processed = start
+            else:
+                processed = end+2
         return text
 
     # TODO: fix this so it actually works
@@ -1338,9 +1375,9 @@ class BaseParser(object):
 
             if close == u'/>':
                 # empty element tag, <tag />
-                content = None
+                content = ''
                 text = inside
-                tail = None
+                tail = ''
             else:
                 if element == u'!--':
                     end = _endCommentPat

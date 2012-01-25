@@ -200,7 +200,7 @@ class WikimarkupTestCase(unittest.TestCase):
         def testHook(parser, name, param):
             param_names = sorted(param.keys())
             param_str = ",".join("%s=%s" % (i, param[i]) for i in param_names)
-            return "'''%s(%s)'''" % (name, param_str)
+            return "'''%s'''(%s)" % (name, param_str)
 
         p = Parser()
         text = "{{template}}"
@@ -209,13 +209,17 @@ class WikimarkupTestCase(unittest.TestCase):
 
         p.registerTemplateHook('template', testHook)
         text = "{{template}}"
-        assumed = "<p><strong>template()</strong>\n</p>"
+        assumed = "<p><strong>template</strong>()\n</p>"
         self.assertEquals(p.parse(text), assumed)
 
         p.registerTemplateHook('*', testHook)
         text = "{{template2|param1|a=param2}}"
-        assumed = "<p><strong>template2(1=param1,2=param2,a=param2)</strong>\n</p>"
+        assumed = "<p><strong>template2</strong>(1=param1,2=param2,a=param2)\n</p>"
         self.assertEquals(p.parse(text), assumed)
 
+        text = "{{template|{{param1|param1.param}}|a={{param2|param2.param}}}}"
+        assumed = "<p><strong>template</strong>(1=<strong>param1</strong>(1=param1.param),2=<strong>param2</strong>(1=param2.param),a=<strong>param2</strong>(1=param2.param))\n</p>"
+        self.assertEquals(p.parse(text), assumed)
+        
 if __name__ == '__main__':
     unittest.main()
